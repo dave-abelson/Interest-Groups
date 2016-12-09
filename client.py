@@ -49,6 +49,8 @@ def client():
 				#send message to server
 				msg = sys.stdin.readline()
 				s.send(msg)
+				if msg.strip() == "logout":
+					sys.exit()
 
 if __name__ == "__main__":
 	sys.exit(client())

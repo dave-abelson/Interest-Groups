@@ -10,11 +10,16 @@ HOST = "localhost"
 PORT = 5539
 BUFF = 1024
 
+user_list = []
+global_ID = 0
+
 help_menu = "MAKE HELP MENU"
 
 class User:
-	def __init__(self, username):
+	def __init__(self, username, ID, socket):
 		self.username = username
+		self.ID = ID
+		self.socket = socket
 
 
 def server():
@@ -56,8 +61,17 @@ def server():
 						if data_list[1] == '':
 							sock.send(help_menu)
 						else:
-							new = User(data_list[1])
+							user = User(data_list[1], global_ID, sock)
+							global_ID += 1
+							user_list.append(user)
+							print("USERNAME: " + user.username)
 							sock.send(data_list[1] + " has logged in")
+					elif data.strip() == "logout":
+						sock.send("Bye")
+						LIST_SOCKETS.remove(sock)
+						for i in user_list:
+							if i.socket == sock:
+								user_list.remove(i)
 				else:
 					#remove socket
 					if sock in LIST_SOCKETS:
