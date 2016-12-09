@@ -10,6 +10,13 @@ HOST = "localhost"
 PORT = 5539
 BUFF = 1024
 
+help_menu = "MAKE HELP MENU"
+
+class User:
+	def __init__(self, username):
+		self.username = username
+
+
 def server():
 	#establish server socket
 	server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -32,7 +39,7 @@ def server():
 				print("Client (%s,%s) connected" % addr)
 
 				#broadcast
-			#received from client
+		#received from client
 		else:
 			#process client data
 			try:
@@ -41,6 +48,16 @@ def server():
 				if data:
 					#deal with data
 					print(str(data))
+					data_list = data.strip().split()
+					#help menu
+					if data.strip() == "help":
+						sock.send(help_menu)
+					elif data_list[0] == "login":
+						if data_list[1] == '':
+							sock.send(help_menu)
+						else:
+							new = User(data_list[1])
+							sock.send(data_list[1] + " has logged in")
 				else:
 					#remove socket
 					if sock in LIST_SOCKETS:

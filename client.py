@@ -25,7 +25,7 @@ def client():
 		print("Cannot connect")
 		sys.exit()
 
-	print("Connected to Host Server")
+	print("Connected to Server")
 
 	while True:
 		socket_list = [sys.stdin, s]
@@ -42,7 +42,8 @@ def client():
 					sys.exit()
 				else:
 					#print server message
-					sys.stdout.write(data)
+					sys.stdout.write(data +'\n')
+
 					sys.stdout.flush()
 			else:
 				#send message to server
