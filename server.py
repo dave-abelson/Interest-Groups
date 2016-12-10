@@ -4,10 +4,11 @@ import socket
 import sys
 import time
 import select
+import sqlite3
 
 LIST_SOCKETS = []
 HOST = "localhost"
-PORT = 5539
+PORT = 8000
 BUFF = 1024
 
 user_list = []
@@ -45,40 +46,43 @@ def server():
 
 				#broadcast
 		#received from client
-		else:
-			#process client data
-			try:
-				#data from socket
-				data = sock.recv(BUFF)
-				if data:
-					#deal with data
-					print(str(data))
-					data_list = data.strip().split()
-					#help menu
-					if data.strip() == "help":
-						sock.send(help_menu)
-					elif data_list[0] == "login":
-						if data_list[1] == '':
+			else:
+				#process client data
+				try:
+					#data from socket
+					data = sock.recv(BUFF)
+					if data:
+						#deal with data
+						print(str(data))
+						data_list = data.strip().split()
+						#help menu
+						if data.strip() == "help":
 							sock.send(help_menu)
-						else:
-							user = User(data_list[1], global_ID, sock)
-							global_ID += 1
-							user_list.append(user)
-							print("USERNAME: " + user.username)
-							sock.send(data_list[1] + " has logged in")
-					elif data.strip() == "logout":
-						sock.send("Bye")
-						LIST_SOCKETS.remove(sock)
-						for i in user_list:
-							if i.socket == sock:
-								user_list.remove(i)
-				else:
-					#remove socket
-					if sock in LIST_SOCKETS:
-						LIST_SOCKETS.remove(sock)
-			except:
-				#send out
-				continue
+						elif data_list[0] == "login":
+							if len(data_list) < 2:
+								sock.send(help_menu)
+							else:
+								global global_ID #access global variables
+								user = User(data_list[1], 0, sock)
+								global_ID = global_ID + 1
+								user_list.append(user)
+								print(data_list[1] + " has logged in")
+								sock.send(data_list[1] + " has logged in")
+						elif data.strip() == "logout":
+							sock.send("Bye")
+							LIST_SOCKETS.remove(sock)
+							for i in user_list:
+								if i.socket == sock:
+									user_list.remove(i)
+					else:
+						#remove socket
+						if sock in LIST_SOCKETS:
+							LIST_SOCKETS.remove(sock)
+				except Exception as e: 
+					#send out
+					print("DAVE YOU IDIOT")
+					print str(e)
+					continue
 
 	server_socket.close()			
 

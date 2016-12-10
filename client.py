@@ -32,7 +32,7 @@ def client():
 
 		#select on sockets
 		read, write, error = select.select(socket_list, [], [])
-
+		
 		for sock in read:
 			#message from server
 			if sock == s:
