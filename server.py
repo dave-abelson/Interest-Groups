@@ -10,6 +10,11 @@ LIST_SOCKETS = []
 HOST = "localhost"
 PORT = 8000
 BUFF = 1024
+DEFAULT = 10
+DISPLAY_GP_FLAG = -1
+MODE = "DEFAULT"
+COUNTER = 0
+GROUP_LIST = []
 
 user_list = []
 global_ID = 0
@@ -22,6 +27,11 @@ class User:
 		self.ID = ID
 		self.socket = socket
 
+class Group:
+        def __init__(self, groupname, groupID, isSubscribed):
+                self.groupname = groupname
+                self.groupID = groupID
+                self.isSubscribed = isSubscribed
 
 def server():
 	#establish server socket
@@ -55,9 +65,11 @@ def server():
 						#deal with data
 						print(str(data))
 						data_list = data.strip().split()
+						
 						#help menu
 						if data.strip() == "help":
 							sock.send(help_menu)
+							
 						elif data_list[0] == "login":
 							if len(data_list) < 2:
 								sock.send(help_menu)
@@ -65,9 +77,61 @@ def server():
 								global global_ID #access global variables
 								user = User(data_list[1], 0, sock)
 								global_ID = global_ID + 1
-								user_list.append(user)
+								user_list.append(user) 
 								print(data_list[1] + " has logged in")
 								sock.send(data_list[1] + " has logged in")
+
+						#arg command
+						elif data_list[0] == "ag":
+                                                        if len(data_list)<2:
+                                                                get_group(DEFAULT)
+                                                        else:
+                                                                if(data_list[1] == "s"):
+                                                                        subscribeGroup(data_list)
+                                                                elif(data_list[1] == "u"):
+                                                                        unsubscribeGroup(data_list)
+                                                                elif(data_list[1] == "n"):
+                                                                        print_restGroups()
+                                                                elif(data_list[1] == "q"):
+                                                                
+                                                                else:
+                                                                        sock.send(help_menu)
+                                                                get_group(data_list[1])
+                                                #sg command
+                                                elif data_list[0] == "sg":
+                                                        if len(data_list)<2:
+                                                                get_subscribeGroups(DEFAULT)
+                                                        else:
+                                                                set_mode("sg")
+                                                                get_subscribeGroups(data_list[1])
+
+                                                #check for mode and specific sub_command for each mode
+                                                elif data_list[0] == "s" || data_list[0] == "u"
+                                                        || data_list[0] == "n" || data_list[0] == "q":
+                                                        if(MODE=="ag"):
+                                                                if(data_list[0] == "s"):
+                                                                        subscribeGroup(data_list)
+                                                                elif(data_list[0] == "u"):
+                                                                        unsubscribeGroup(data_list)
+                                                                elif(data_list[0] == "n"):
+                                                                        print_restGroups()
+                                                                elif(data_list[0] == "q"):
+                                                                        set_mode("DEFAULT")
+                                                                else:
+                                                                        sock.send(help_menu)
+                                                        elif(MODE=="sg"):
+                                                                elif(data_list[0] == "u"):
+                                                                        unsubscribeGroup(data_list)
+                                                                elif(data_list[0] == "n"):
+                                                                        print_restGroups()
+                                                                elif(data_list[0] == "q"):
+                                                                        set_mode("DEFAULT")
+                                                                else:
+                                                                        sock.send(help_menu)        
+                                                        else:
+                                                                sock.send(help_menu)
+                                                                
+                                                #logout
 						elif data.strip() == "logout":
 							sock.send("Bye")
 							LIST_SOCKETS.remove(sock)
@@ -84,8 +148,95 @@ def server():
 					print str(e)
 					continue
 
-	server_socket.close()			
+	server_socket.close()
+	
+# For command AG
+# @para N number of groups to print or default value
+def get_groups(N):
+        MODE = "ag"
+        #for loop
+                print_result_AG_SG()
 
+
+# For command AG or SG
+# @para N number of groups to print or default value
+def subscribeGroups(data_list):
+        if len(data_list)<2:
+                sock.send(help_menu)
+        elif:
+                for a in range(1, len(data_list))
+                        #subcribe here
+
+        #reset counter
+        return True
+
+#For command AG or SG
+def unsubscribeGroups(data_list):
+        final_str = ""
+        if len(data_list)<2:
+                sock.send(help_menu)
+        else:
+                for a in range(1, len(data_list))
+                        #unsubscribe here
+                
+
+        #reset counter
+        return True
+
+def print_restGroups():
+        if len(data_list)<2:
+                sock.send(help_menu)
+        elif
+
+        #reset counter
+        return True
+def print_post():
+        final_str = "" 
+        final_str = final_str + "Group: " + "put" + "\n"
+        final_str = final_str + "Subject: " + "put" + "\n"
+        final_str = final_str + "Author: " + "put" + "\n"
+        final_str = final_str + "Date: " + "put" + "\n"
+
+        sock.send(final_str)
+
+#Prints for commands AG and SG
+def print_result_AG_SG(final_str, data_list):
+
+        #print group counter 
+        print(counter + ". ")
+
+        if(MODE=="ag"):
+                #check if the current user is subscribed to this specific group
+                if():
+                        print("(" + "put status here" + ")  ")
+                else:
+                        print("( )")
+        elif(MODE=="sg"):
+                #print the number of unread/new posts or empty string
+                print("put number of unread/new post here" + "  ")
+                
+        #print the group name
+        print("put here")
+
+#Prints for command RG
+#Order them by unread/new posts first
+def print_resultRG():        
+        #print group counter 
+        print(counter + ". ")
+
+        #status of the post, "N" for unread/new post or empty string for read
+        print(" put N or empty space" + " ")
+
+        #date and time of the post
+        print("put date/time here" + " ")
+
+        #sibject of the post
+        print("put subject of post here")
+
+#set the cu
+def set_mode(string):
+        MODE = string
+        
 
 if __name__ == "__main__":
 	sys.exit(server())

@@ -5,6 +5,7 @@ import select
 import sys
 
 usage = "Usage: python client.py hostname port"
+MODE = "DEFAULT"
 
 
 def client():
@@ -35,6 +36,7 @@ def client():
 		
 		for sock in read:
 			#message from server
+                        #receive from server
 			if sock == s:
 				data = sock.recv(4096)
 				if not data:
@@ -43,14 +45,80 @@ def client():
 				else:
 					#print server message
 					sys.stdout.write(data +'\n')
+					
 
 					sys.stdout.flush()
+					
+			#receive from server
 			else:
 				#send message to server
 				msg = sys.stdin.readline()
-				s.send(msg)
+				msg_parse = msg.strip().split()
 				if msg.strip() == "logout":
+                                        s.send(msg)
 					sys.exit()
 
+				#command mode AG	
+				elif(msg_parse[0]=="ag"):
+                                        set_mode("ag") 
+                                        s.send(msg)
+                                        
+                                #command mode SG                
+                                elif(msg_parse[0]=="sg"):
+                                        set_mode("sg")
+                                        s.send(msg)
+
+                                #command mode RG        
+                                elif(msg_parse[0]=="rg"):
+                                        set_mode("rg")
+                                        s.send(msg)        
+                                        
+                                elif(msg_parse[0]=="s"):
+                                        if(MODE=="sg"):
+                                                arg_str = "sg " + msg
+                                                s.send(arg_str)
+                                        else:
+                                              print("Invalid sub-command for mode " + MODE)  
+                                elif(msg_parse[0]=="u"):
+                                        if(MODE=="sg"):
+                                                arg_str = "sg " + msg
+                                                s.send(arg_str)
+                                        elif(MODE=="ag"):
+                                                arg_str = "ag " + msg
+                                                s.send(arg_str)
+                                        else:
+                                                print("Invalid sub-command, no mode was specified")
+                                                
+                                elif(msg_parse[0]=="p" || msg_parse[0]=="r"):
+                                        if(MODE=="rg"):
+                                                arg_str = "rg " + msg
+                                                send(arg_str)
+                                        else:
+                                                print("Invalid sub-command for mode " + MODE)
+                                elif(msg_parse[0]=="q"):
+                                        set_mode("DEFAULT")
+
+                                elif(msg_parse[0]=="n"):
+                                        if(MODE=="sg"):
+                                                arg_str = "sg " + msg
+                                                s.send(arg_str)
+                                        elif(MODE=="ag"):
+                                                arg_str = "ag " + msg
+                                                s.send(arg_str)
+                                        elif(MODE=="rg"):
+                                                arg_str = "rg " + msg
+                                                s.send(arg_str)
+
+                                        else:
+                                                 print("Invalid sub-command, no mode was specified")
+                                        
+                                     
+                
+
+
+#set the current mode
+def set_mode(string):
+        MODE = string
+        
 if __name__ == "__main__":
 	sys.exit(client())
