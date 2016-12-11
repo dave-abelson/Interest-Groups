@@ -143,8 +143,11 @@ def server():
 								if(len(data_list) == 2):
 									if(data_list[1] == "n"):
 										send_restPostlist(sock)
-									elif(getGroupByGroupName(data_list[1], getUserBySocket(sock).groupList) is not None):
+									elif(getGroupByGroupName(data_list[1], getSubscribedGroupList(sock)) is not None):
+										print("GOT HERE")
 										send_resultRG(DEFAULT,data_list, sock)
+									else:
+										print("FAIL")
 								else:
 									if(data_list[2].isdigit()):
 										send_resultRG(int(data_list[2]),data_list, sock)
@@ -211,6 +214,17 @@ def getGroupByGroupName(groupName, groupList):
 		if(g.groupname == groupName):
 			return g
 	return None
+	
+def getSubscribedGroupList(sock):
+	user = getUserBySocket(sock)
+	query = "SELECT * FROM groups, subscription WHERE subscription.userId == \'%s\' and groups.groupID == subscription.groupID" % (user.username)
+	groupsDB = accessSQL(query)
+	groupList = []
+	for g in groupsDB:
+		groupModel = Group(g['groupName'], g['groupID'])
+		groupList.append(groupModel)
+		groupModel.isSubscribed = True
+	return groupList
 	
 def get_groups(N, sock):
 	#for loop	
@@ -371,7 +385,7 @@ def sendGroupPostlist(user ,start, end, sock):
 			s = s + str(x+1) + ".   \t" + p.datetime + "\t" + p.subject + "\n"			
 		user.postIndex += 1
 	sock.send(s)
-	if(x >= len(user.groupList)):
+	if(x >= len(user.readingGroup.posts)):
 		sock.send("\a.\a.end")
 
 #set the cu
