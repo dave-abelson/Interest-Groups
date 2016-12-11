@@ -30,12 +30,17 @@ class User:
 		self.username = username
 		self.socket = socket
 		self.groupList = []
-		self.numLineToRead = 0
-		self.groupIndex = 0
+		self.numLineToRead = 0 
+		self.groupIndex = 0 
+		self.postIndex = 0
+		self.readingGroup = None
+		
 	def reset(self):
 		self.groupList = []
 		self.numLineToRead = 0
 		self.groupIndex = 0
+		self.postIndex = 0
+		self.readingGroup = None
 
 class Group:
 	def __init__(self, groupname, groupID):
@@ -79,69 +84,90 @@ def server():
 				#broadcast
 		#received from client
 			else:
-				#process client data
-				#data from socket
-				data = sock.recv(BUFF)
-				if data:
-					#deal with data
-					print(str(data))
-					data_list = data.strip().split()
-					
-					#help menu
-					if data.strip() == "help":
-						sock.send(help_menu)
-					elif data_list[0] == "login":
-						if(getUserBySocket(sock) is not None):
-							o=0 #LAZY WAY TO IGNORE A CONDITION
-						elif len(data_list) < 2:
+				try:
+					#process client data
+					#data from socket
+					data = sock.recv(BUFF)
+					if data:
+						#deal with data
+						print(str(data))
+						data_list = data.strip().split()
+						
+						#help menu
+						if data.strip() == "help":
 							sock.send(help_menu)
-						else:
-							user = loginUser(data_list[1], sock)
-							user_list.append(user) 
-							print(data_list[1] + " has logged in")
-							sock.send(data_list[1] + " has logged in")
-					#arg command
-					elif data_list[0] == "ag":
-						if len(data_list)<2:
-							get_groups(DEFAULT, sock)
-						else:
-							if(data_list[1] == "s"):
-								subscribeGroups(data_list, sock)
-							elif(data_list[1] == "u"):
-								unsubscribeGroups(data_list, sock)
-							elif(data_list[1] == "n"):
-								print_restGroups(sock, "ag")
-							elif(data_list[1] == "q"):
-								set_mode("DEFAULT")
-							elif(data_list[1].isdigit()):
-								get_groups(int(data_list[1]), sock)
-							else:
+						elif data_list[0] == "login":
+							if(getUserBySocket(sock) is not None):
+								o=0 #LAZY WAY TO IGNORE A CONDITION
+							elif len(data_list) < 2:
 								sock.send(help_menu)
-					#sg command
-					elif data_list[0] == "sg":
-						if len(data_list)<2:
-							get_subscribeGroups(DEFAULT, sock)
-						else:
-							if(data_list[1] == "n"):
-								print_restGroups(sock, "sg")
-							elif(data_list[1] == "u"):
-								unsubscribeGroups(data_list, sock)
-							elif(data_list[1] == "q"):
-								set_mode("DEFAULT")
-							elif(data_list[1].isdigit()):
-								get_subscribeGroups(int(data_list[1]), sock)
 							else:
-								sock.send(help_menu)
-					elif data.strip() == "logout":
-						sock.send("Bye")
-						LIST_SOCKETS.remove(sock)
-						for i in user_list:
-							if i.socket == sock:
-								user_list.remove(i)
-					else:
-						#remove socket
-						if sock in LIST_SOCKETS:
-							LIST_SOCKETS.remove(sock)
+								user = loginUser(data_list[1], sock)
+								user_list.append(user) 
+								print(data_list[1] + " has logged in")
+								sock.send(data_list[1] + " has logged in")
+						#arg command
+						elif(isUserLoggedIn(sock)):
+							if data_list[0] == "ag":
+								if len(data_list)<2:
+									get_groups(DEFAULT, sock)
+								else:
+									if(data_list[1] == "s"):
+										subscribeGroups(data_list, sock)
+									elif(data_list[1] == "u"):
+										unsubscribeGroups(data_list, sock)
+									elif(data_list[1] == "n"):
+										print_restGroups(sock, "ag")
+									elif(data_list[1] == "q"):
+										set_mode("DEFAULT")
+									elif(data_list[1].isdigit()):
+										get_groups(int(data_list[1]), sock)
+									else:
+										sock.send(help_menu)
+							#sg command
+							elif data_list[0] == "sg":
+								if len(data_list)<2:
+									get_subscribeGroups(DEFAULT, sock, True)
+								else:
+									if(data_list[1] == "n"):
+										print_restGroups(sock, "sg")
+									elif(data_list[1] == "u"):
+										unsubscribeGroups(data_list, sock)
+									elif(data_list[1] == "q"):
+										set_mode("DEFAULT")
+									elif(data_list[1].isdigit()):
+										get_subscribeGroups(int(data_list[1]), sock, True)
+									else:
+										sock.send(help_menu)
+							elif data_list[0] == "rg":
+								if(len(data_list) == 2):
+									if(data_list[1] == "n"):
+										send_restPostlist(sock)
+									elif(getGroupByGroupName(data_list[1], getUserBySocket(sock).groupList) is not None):
+										send_resultRG(DEFAULT,data_list, sock)
+								else:
+									if(data_list[2].isdigit()):
+										send_resultRG(int(data_list[2]),data_list, sock)
+									else:
+										sock.send(help_menu)
+							elif data.strip() == "logout":
+								sock.send("Bye")
+								LIST_SOCKETS.remove(sock)
+								for i in user_list:
+									if i.socket == sock:
+										user_list.remove(i)
+							else:
+								#remove socket
+								if sock in LIST_SOCKETS:
+									LIST_SOCKETS.remove(sock)
+						else:
+							sock.send("User is not logged in\n")
+							sock.send(help_menu)
+				except Exception as e: 
+					#send out
+					print("DAVE YOU IDIOT")
+					print str(e)
+					continue
 
 	server_socket.close()
 	
@@ -153,9 +179,15 @@ def loginUser(username, socket):
 		if(u['userId'] == username):
 			return User(username, socket)
 	accessSQL("INSERT INTO users VALUES (\'" + username + "\')")
-	print("HERE")
+	#print("HERE")
 	return User(username, socket)
 
+def isUserLoggedIn(sock):
+	if(getUserBySocket(sock) is not None):
+		return True
+	else:
+		return False
+	
 def accessSQL(statement):
 	connCursor.execute(statement)
 	dbreturned = connCursor.fetchall()
@@ -172,6 +204,12 @@ def getUserByUserName(userName):
 	for u in user_list:
 		if(u.socket == userName):
 			return u
+	return None
+
+def getGroupByGroupName(groupName, groupList):
+	for g in groupList:
+		if(g.groupname == groupName):
+			return g
 	return None
 	
 def get_groups(N, sock):
@@ -190,7 +228,7 @@ def get_groups(N, sock):
 	sendGroup(user,user.groupIndex, user.groupIndex + N, sock, "ag")
 	
 	
-def get_subscribeGroups(N, sock):
+def get_subscribeGroups(N, sock, send):
 	user = getUserBySocket(sock)
 	query = "SELECT * FROM groups, subscription WHERE subscription.userId == \'%s\' and groups.groupID == subscription.groupID" % (user.username)
 	groupsDB = accessSQL(query)
@@ -200,7 +238,8 @@ def get_subscribeGroups(N, sock):
 		user.groupList.append(groupModel)
 		groupModel.isSubscribed = True
 	user.numLineToRead = N
-	sendGroup(user,user.groupIndex, user.groupIndex + N, sock, "sg")
+	if(send == True):
+		sendGroup(user,user.groupIndex, user.groupIndex + N, sock, "sg")
 
 def sendGroup(user ,start, end, sock, mode):
 	s = ""
@@ -213,7 +252,7 @@ def sendGroup(user ,start, end, sock, mode):
 			else:
 				s = s + str(x+1) + ". ( ) " + user.groupList[x].groupname + "\n"
 		elif(mode == "sg"):
-			npNum = getNumNewPost(user.groupList[x], user)
+			npNum = markReadPost(user.groupList[x], user)
 			s = s + str(x+1) + ".\t" + str(npNum) + "\t" + user.groupList[x].groupname + "\n"
 		user.groupIndex += 1
 	sock.send(s)
@@ -221,7 +260,9 @@ def sendGroup(user ,start, end, sock, mode):
 		sock.send("\a.\a.end")
 		
 #ONLY WORKS IF THE GROUP IS IN THE USER LIST
-def getNumNewPost(group, user):
+#ALSO RETURNS THE NUMBER OF NEW POSTS
+#ALSO FILLS IN THE POSTS TO THE GROUP
+def markReadPost(group, user):
 	getGroupPosts(group)
 	query = "SELECT * FROM postStatus"
 	readPost = accessSQL(query)
@@ -303,18 +344,35 @@ def print_result_AG_SG(final_str, data_list, sock):
 
 #Prints for command RG
 #Order them by unread/new posts first
-def print_resultRG(sock):        
-	#print group counter 
-	print(counter + ". ")
+def send_resultRG(N,data_list ,sock):        
+	get_subscribeGroups(0, sock, False)
+	user = getUserBySocket(sock)
+	user.readingGroup = getGroupByGroupName(data_list[1], user.groupList)
+	print(user.readingGroup)
+	#TODO CHECK IF READING GROUP IS NONE
+	markReadPost(user.readingGroup, user)
+	print(user.readingGroup.posts)
+	user.numLineToRead = N
+	sendGroupPostlist(user, user.postIndex, user.postIndex + N, sock)
 
-	#status of the post, "N" for unread/new post or empty string for read
-	print(" put N or empty space" + " ")
-
-	#date and time of the post
-	print("put date/time here" + " ")
-
-	#sibject of the post
-	print("put subject of post here")
+def send_restPostlist(sock):
+	user = getUserBySocket(sock)
+	sendGroupPostlist(user, user.postIndex, user.postIndex + user.numLineToRead, sock)
+	
+def sendGroupPostlist(user ,start, end, sock):
+	s = ""
+	for x in range(start, end):
+		if(x >= len(user.readingGroup.posts)):
+			break
+		p = user.readingGroup.posts[x]
+		if(p.new):
+			s = s + str(x+1) + ". N \t" + p.datetime + "\t" + p.subject + "\n"
+		else:
+			s = s + str(x+1) + ".   \t" + p.datetime + "\t" + p.subject + "\n"			
+		user.postIndex += 1
+	sock.send(s)
+	if(x >= len(user.groupList)):
+		sock.send("\a.\a.end")
 
 #set the cu
 def set_mode(string):

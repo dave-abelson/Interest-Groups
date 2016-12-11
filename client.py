@@ -6,7 +6,14 @@ import sys
 
 usage = "Usage: python client.py hostname port"
 MODE = "DEFAULT"
+exitModeNext = False
 
+modeDic = {
+	'ag' : 'All Groups',
+	'sg'  : 'Subscribed Groups',
+	'rg' : 'Read Group',
+	'rgp'  : 'Read Group Post',
+};
 
 def client():
 	if len(sys.argv) < 3:
@@ -48,7 +55,7 @@ def client():
 					sys.stdout.flush()		
 					if(len(dataList) > 1):
 						if(dataList[1] == "end"):
-							set_mode("DEFAULT")
+							set_exit_next(True)
 			else:
 				#send message to server
 				msg = sys.stdin.readline()
@@ -61,23 +68,29 @@ def client():
 						s.send(msg)
 					#command mode AG	
 					elif(msg_parse[0]=="ag"):
-						set_mode("ag") 
-						s.send(msg)
-											
+						if(MODE == "DEFAULT"):						
+							set_mode("ag") 
+							s.send(msg)
+						else:
+							print("Invalid sub-command for mode " + MODE)											
 					#command mode SG                
-					elif(msg_parse[0]=="sg"):
-						set_mode("sg")
-						s.send(msg)
-
+					elif(msg_parse[0]=="sg" and MODE == "DEFAULT"):
+						if(MODE == "DEFAULT"):	
+							set_mode("sg")
+							s.send(msg)
+						else:
+							print("Invalid sub-command for mode " + MODE)	
 					#command mode RG        
-					elif(msg_parse[0]=="rg"):
-						set_mode("rg")
-						s.send(msg)        
-							
+					elif(msg_parse[0]=="rg" and MODE == "DEFAULT" and len(msg_parse) > 1):
+						if(MODE == "DEFAULT"):	
+							set_mode("rg")
+							s.send(msg)        
+						else:
+							print("Invalid sub-command for mode " + MODE)	
 					elif(msg_parse[0]=="s"):
 						if(MODE=="sg"):
 							arg_str = "sg " + msg
-							s.send(arg_str)
+							s.send(arg_str)							
 						elif(MODE=="ag"):
 							arg_str = "ag " + msg
 							s.send(arg_str)
@@ -100,31 +113,46 @@ def client():
 						else:
 							print("Invalid sub-command for mode " + MODE)
 					elif(msg_parse[0]=="q"):
-						set_mode("DEFAULT")
-
-					elif(msg_parse[0]=="n"):
-						if(MODE=="sg"):
-							arg_str = "sg " + msg
-							s.send(arg_str)
-						elif(MODE=="ag"):
-							arg_str = "ag " + msg
-							s.send(arg_str)
-						elif(MODE=="rg"):
-							arg_str = "rg " + msg
-							s.send(arg_str)
+						if(MODE != "rgp"):
+							set_mode("DEFAULT")
 						else:
-							print(msg_parse)
-							print(MODE)
-							print("Invalid sub-command, no mode was specified")            
+							set_mode("rg")
+					elif(msg_parse[0]=="n"):
+						if(exitModeNext):
+							set_mode("DEFAULT")
+							set_exit_next(False)
+						else:
+							if(MODE=="sg"):
+								arg_str = "sg " + msg
+								s.send(arg_str)
+							elif(MODE=="ag"):
+								arg_str = "ag " + msg
+								s.send(arg_str)
+							elif(MODE=="rg"):
+								arg_str = "rg " + msg
+								s.send(arg_str)
+							elif(MODE=="rgp"):
+								arg_str = "rgp " + msg
+							elif(MODE=="DEFAULT"):
+								print(msg_parse)
+								print(MODE)
+								print("Invalid sub-command, no mode was specified")            
 					elif(msg.strip() == "help"):
 						s.send("help")
+					else:
+						print("Invalid sub-command for mode " + MODE)
                 
 
 
 #set the current mode
 def set_mode(string):
-	global MODE
+	global MODE	
+	if(string == "DEFAULT"):
+		print("Exited " + modeDic[MODE] + " mode")
 	MODE = string
         
+def set_exit_next(b):
+	global exitModeNext
+	exitModeNext = b
 if __name__ == "__main__":
 	sys.exit(client())
