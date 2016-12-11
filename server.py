@@ -168,7 +168,7 @@ def server():
 							sock.send(help_menu)
 				except Exception as e: 
 					#send out
-					print("DAVE YOU IDIOT")
+					print("DAVE YOU GENIUS")
 					print str(e)
 					continue
 
