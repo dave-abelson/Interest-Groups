@@ -5,7 +5,7 @@ import sys
 import time
 import select
 import sqlite3
-
+import datetime
 LIST_SOCKETS = []
 HOST = "localhost"
 PORT = 8000
@@ -142,14 +142,28 @@ def server():
 							elif data_list[0] == "rg":
 								if(len(data_list) == 2):
 									if(data_list[1] == "n"):
-										send_restPostlist(sock)
+										send_restPostlist(sock)		
+									elif(data_list[1] == "p"):
+										createNewPost(sock)								
 									elif(getGroupByGroupName(data_list[1], getSubscribedGroupList(sock)) is not None):
 										print("GOT HERE")
 										send_resultRG(DEFAULT,data_list, sock)
 									else:
+										print("Not subscribed")
 										print("FAIL")
 								else:
-									if(data_list[2].isdigit()):
+									if(data_list[1] == "r"):
+										if(len(data_list) != 3):
+											print("error")
+											sock.send(help_menu)
+										else:
+											print(data_list[2])
+											if(len(data_list[2]) == 1):
+												markPostRead(int(data_list[2]), sock)
+											else:
+												for i in xrange(int(data_list[2][0]), int(data_list[2][-1]) + 1):
+													markPostRead(i, sock)
+									elif(data_list[2].isdigit()):
 										send_resultRG(int(data_list[2]),data_list, sock)
 									else:
 										sock.send(help_menu)
@@ -388,6 +402,29 @@ def sendGroupPostlist(user ,start, end, sock):
 	if(x >= len(user.readingGroup.posts)):
 		sock.send("\a.\a.end")
 
+def markPostRead(n, sock):
+	#print("Mark these posts read: " + n)
+	user = getUserBySocket(sock)
+	post = user.readingGroup.posts[n - 1]
+	post.groupId
+	accessSQL("INSERT INTO postStatus(subject, userId, groupId) VALUES (\'" + str(post.subject)  + "\',\'" + user.username + "\'," + str(post.groupId) + " )")
+
+def createNewPost(sock):
+	user = getUserBySocket(sock)
+	sock.send("Enter Post Subject: ")
+	subject = sock.recv(BUFF)
+	sock.send("Post: ")
+	post = sock.recv(BUFF)
+	now = datetime.datetime.now()
+	date_time = now.strftime("%B %d %H:%M:%S")
+	day = now.strftime("%A")
+	weekday = day[:3].upper()
+
+	
+	newPost = Posts(subject, user.username, weekday, date_time, "EST 2016", post, 1)
+
+	accessSQL("INSERT INTO posts(subject, userId, weekDay, date_time, timeZone_year, post, groupId) VALUES (\'" + str(newPost.subject) + "\',\'" + str(newPost.username) + "\',\'" + str(newPost.weekDay) + "\',\'" + str(newPost.datetime) + "\',\'" + str(newPost.timezoneYear) + "\',\'" + str(newPost.post) + "\'," + str(newPost.groupId) + " )")
+	sock.send("Posted")
 #set the cu
 def set_mode(string):
 	MODE = string

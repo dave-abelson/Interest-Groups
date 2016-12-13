@@ -22,6 +22,8 @@ def client():
 
 	host = sys.argv[1]
 	port = int(sys.argv[2])
+	ps = False
+	writePost = False
 
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.settimeout(2)
@@ -51,6 +53,10 @@ def client():
 					sys.exit()
 				else:
 					dataList = data.split("\a.\a.") 
+					if(dataList[0] == "Enter Post Subject: "):
+						ps = True
+					if(dataList[0] == "Post: "):
+						writePost = True
 					sys.stdout.write(dataList[0] +'\n')
 					sys.stdout.flush()		
 					if(len(dataList) > 1):
@@ -105,11 +111,16 @@ def client():
 							s.send(arg_str)
 						else:
 							print("Invalid sub-command, no mode was specified")
-									
+					elif(ps):
+						s.send(msg)	
+						ps = False	
+					elif(writePost):
+						s.send(msg)
+						writePost = False		
 					elif(msg_parse[0]=="p" or msg_parse[0]=="r"):
 						if(MODE=="rg"):
 							arg_str = "rg " + msg
-							send(arg_str)
+							s.send(arg_str)
 						else:
 							print("Invalid sub-command for mode " + MODE)
 					elif(msg_parse[0]=="q"):
