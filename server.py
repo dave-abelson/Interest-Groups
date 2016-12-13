@@ -80,7 +80,6 @@ def server():
 				sockfd, addr = server_socket.accept()
 				LIST_SOCKETS.append(sockfd)
 				print("Client (%s,%s) connected" % addr)
-
 				#broadcast
 		#received from client
 			else:
@@ -297,7 +296,7 @@ def markReadPost(group, user):
 	x = len(group.posts)
 	for p in group.posts:
 		for rp in readPost:
-			if(rp['groupId'] == p.groupId and rp['subject'] == p.subject):
+			if(rp['groupId'] == p.groupId and rp['subject'] == p.subject and rp['userId'] == user.username):
 				p.new = False
 				x -= 1
 	return x
