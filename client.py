@@ -117,7 +117,7 @@ def client():
 					elif(writePost):
 						s.send(msg)
 						writePost = False		
-					elif(msg_parse[0]=="p" or msg_parse[0]=="r"):
+					elif(msg_parse[0]=="p" or msg_parse[0]=="r" or msg_parse[0][0] == "["):
 						if(MODE=="rg"):
 							arg_str = "rg " + msg
 							s.send(arg_str)
