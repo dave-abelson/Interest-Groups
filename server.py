@@ -419,13 +419,27 @@ def createNewPost(sock):
 	date_time = now.strftime("%B %d %H:%M:%S")
 	day = now.strftime("%A")
 	weekday = day[:3].upper()
-
+	
+	subject = escapeQuotes(subject)
+	post = escapeQuotes(post)
 	
 	newPost = Posts(subject, user.username, weekday, date_time, "EST 2016", post, 1)
 
 	accessSQL("INSERT INTO posts(subject, userId, weekDay, date_time, timeZone_year, post, groupId) VALUES (\'" + str(newPost.subject) + "\',\'" + str(newPost.username) + "\',\'" + str(newPost.weekDay) + "\',\'" + str(newPost.datetime) + "\',\'" + str(newPost.timezoneYear) + "\',\'" + str(newPost.post) + "\'," + str(newPost.groupId) + " )")
 	sock.send("Posted")
 #set the cu
+
+
+#USE THIS FOR EVERY USER STRING INPUT INTO DATABASE, ADD EXTRA ESCAPES IF YOU NEED
+def escapeQuotes(string):
+	newString = ""
+	for s in string:
+		if(s == "\'" or s == "\""):
+			newString = newString + s + s
+		else:
+			newString = newString + s
+	return newString
+
 def set_mode(string):
 	MODE = string
 	
