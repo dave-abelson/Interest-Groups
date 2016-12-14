@@ -2,7 +2,6 @@
 
 import socket
 import sys
-import time
 import select
 import sqlite3
 import datetime
@@ -164,6 +163,7 @@ def userThread(sock):
 								send_resultRG(DEFAULT,data_list, sock)
 							else:
 								print("Not subscribed")
+								sock.send("Not subscribed")
 								print("FAIL")
 						else:
 							if(data_list[1] == "r"):
@@ -177,6 +177,7 @@ def userThread(sock):
 									else:
 										for i in xrange(int(data_list[2][0]), int(data_list[2][-1]) + 1):
 											markPostRead(i, sock)
+									sock.send("Success!")	
 							elif(data_list[2].isdigit()):
 								send_resultRG(int(data_list[2]),data_list, sock)
 							else:
@@ -193,7 +194,7 @@ def userThread(sock):
 							LIST_SOCKETS.remove(sock)
 				else:
 					sock.send("User is not logged in\n")
-					sock.send(help_menu)
+					#sock.send(help_menu)
 		except Exception as e: 
 			#send out
 			print("DAVE YOU GENIUS")
@@ -338,6 +339,7 @@ def subscribeGroups(data_list, sock):
 			subscribedGroup = user.groupList[int(data_list[x]) - 1]
 			accessSQL("INSERT INTO subscription VALUES (\'" + str(subscribedGroup.groupID)  + "\',\'" + user.username + "\')")
 	#reset counter
+	get_groups(DEFAULT, sock)
 	return True
 
 #For command AG or SG
@@ -350,6 +352,7 @@ def unsubscribeGroups(data_list, sock):
 			subscribedGroup = user.groupList[int(data_list[x]) - 1]		
 			query = "DELETE FROM subscription WHERE groupID = %d and userId = \'%s\'" % (subscribedGroup.groupID, user.username)
 			accessSQL(query)
+	get_groups(DEFAULT, sock)
 	return True
 
 def print_restGroups(sock, mode):
@@ -439,7 +442,7 @@ def createNewPost(sock):
 	subject = escapeQuotes(subject)
 	post = escapeQuotes(post)
 	
-	newPost = Posts(subject, user.username, weekday, date_time, "EST 2016", post, 1)
+	newPost = Posts(subject, user.username, weekday, date_time, "EST 2016", post, user.readingGroup.groupID)
 
 	accessSQL("INSERT INTO posts(subject, userId, weekDay, date_time, timeZone_year, post, groupId) VALUES (\'" + str(newPost.subject) + "\',\'" + str(newPost.username) + "\',\'" + str(newPost.weekDay) + "\',\'" + str(newPost.datetime) + "\',\'" + str(newPost.timezoneYear) + "\',\'" + str(newPost.post) + "\'," + str(newPost.groupId) + " )")
 	sock.send("Posted")
@@ -453,7 +456,7 @@ def readPost(num, sock):
 	curAuthor = post.username
 	curDate = post.weekDay + ", " + post.datetime + " " + post.timezoneYear
 
-	output = ("Group: " + curGroupName) + "\n" + ("Subject: " + curSubject) + ("Author: " + curAuthor) + "\n" + ("Date: " + curDate) + "\n" + ("\n" + post.post + "\n")
+	output = ("Group: " + curGroupName) + "\n" + ("Subject: " + curSubject) + ("Author: " + curAuthor) + "\n" + ("Date: " + curDate) + "\n" + ( post.post)
 	
 	sock.send(output)
 

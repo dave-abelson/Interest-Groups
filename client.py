@@ -24,6 +24,7 @@ def client():
 	port = int(sys.argv[2])
 	ps = False
 	writePost = False
+	post = ""
 
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.settimeout(2)
@@ -65,7 +66,12 @@ def client():
 			else:
 				#send message to server
 				msg = sys.stdin.readline()
+
 				msg_parse = msg.strip().split()
+				if(msg == "User is not logged in\n"):
+					print("Log in")
+					set_mode("DEFAULT")
+
 				if(len(msg_parse) > 0):
 					if msg.strip() == "logout":
 						s.send(msg)
@@ -115,8 +121,12 @@ def client():
 						s.send(msg)	
 						ps = False	
 					elif(writePost):
-						s.send(msg)
-						writePost = False		
+						if(msg_parse[0] == "$"):
+							s.send(post)
+							post = ""
+							writePost = False
+						else:
+							post = post + "\n" + msg
 					elif(msg_parse[0]=="p" or msg_parse[0]=="r" or msg_parse[0][0] == "["):
 						if(MODE=="rg"):
 							arg_str = "rg " + msg
@@ -151,6 +161,7 @@ def client():
 					elif(msg.strip() == "help"):
 						s.send("help")
 					else:
+						print("HEREEE")
 						print("Invalid sub-command for mode " + MODE)
                 
 
