@@ -8,6 +8,7 @@ usage = "Usage: python client.py hostname port"
 MODE = "DEFAULT"
 exitModeNext = False
 
+#The different groups 
 modeDic = {
 	'ag' : 'All Groups',
 	'sg'  : 'Subscribed Groups',
@@ -16,16 +17,18 @@ modeDic = {
 };
 
 def client():
+	#check arguments
 	if len(sys.argv) < 3:
 		print(usage)
 		sys.exit()
-
+	#assign the args
 	host = sys.argv[1]
 	port = int(sys.argv[2])
+	#variables
 	ps = False
 	writePost = False
 	post = ""
-
+	#create socket
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.settimeout(2)
 
@@ -53,11 +56,15 @@ def client():
 					print("Not connected to Server")
 					sys.exit()
 				else:
+					#split data from server
 					dataList = data.split("\a.\a.") 
+					#boolean for post subject
 					if(dataList[0] == "Enter Post Subject: "):
 						ps = True
+					#boolean for writing post
 					if(dataList[0] == "Post: "):
 						writePost = True
+					#print data received from server
 					sys.stdout.write(dataList[0] +'\n')
 					sys.stdout.flush()		
 					if(len(dataList) > 1):
@@ -66,18 +73,22 @@ def client():
 			else:
 				#send message to server
 				msg = sys.stdin.readline()
-
+				#split and parse msg to server
 				msg_parse = msg.strip().split()
+				#make sure user is logged in
 				if(msg == "User is not logged in\n"):
 					print("Log in")
 					set_mode("DEFAULT")
-
+				#check what client is sending
 				if(len(msg_parse) > 0):
+					#check if user is logging in or out
 					if msg.strip() == "logout":
 						s.send(msg)
 						sys.exit()
 					elif msg_parse[0] == "login":
 						s.send(msg)
+					#for the different modes, send the proper protocol to the server.
+					
 					#command mode AG	
 					elif(msg_parse[0]=="ag"):
 						if(MODE == "DEFAULT"):						
@@ -120,6 +131,7 @@ def client():
 					elif(ps):
 						s.send(msg)	
 						ps = False	
+					#create post text to submit
 					elif(writePost):
 						if(msg_parse[0] == "$"):
 							s.send(post)
@@ -161,7 +173,6 @@ def client():
 					elif(msg.strip() == "help"):
 						s.send("help")
 					else:
-						print("HEREEE")
 						print("Invalid sub-command for mode " + MODE)
                 
 
