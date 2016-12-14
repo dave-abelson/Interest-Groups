@@ -20,8 +20,12 @@ GROUP_LIST = []
 user_list = []
 global_ID = 0
 
-help_menu = "SEND HELP SUSAN!!!! HALP"
-
+help_menu = "\nHELP MENU: \n\n"
+ag_menu = "\nAG MODE sub-command options: \n\ns  [s N] | [s] subscribe to a group. \nu  [u N] unsubscribe from group. \nn  display remaining groups or exit if all displayed. \nq  quit from mode\n"
+sg_menu = "\nSG MODE sub-command options: \n\nu  [u N] unsubscribe from group. \nn  display remaining groups or exit if all displayed. \nq  quit from mode\n"
+rg_menu = "\nRG MODE sub-command options: \n\n[id]  select a number denoting a post to display.]nr  marks a post as read. \np  post to the group. \nn  display remaining groups or exit if all displayed. \nq  quit from mode\n"
+login_menu = "\nInvalid argument for login. Please include your USER ID.\n"
+error_msg = "\nInvalid sub_commands for\n"
 #conn = sqlite3.connect('./database/InterestDB.db')
 #conn.row_factory = sqlite3.Row
 #connCursor = conn.cursor()
@@ -104,15 +108,18 @@ def userThread(sock):
 				#help menu
 				if data.strip() == "help":
 					sock.send(help_menu)
+					sock.send(ag_menu)
+					sock.send(sg_menu)
+					sock.send(rg_menu)
 				elif data_list[0] == "login":
 					if(getUserBySocket(sock) is not None):
 						o=0 #LAZY WAY TO IGNORE A CONDITION
 					elif len(data_list) < 2:
-						sock.send(help_menu)
+						sock.send(login_menu)
 					else:
 						user = loginUser(data_list[1], sock)
 						user_list.append(user) 
-						print(data_list[1] + " has logged in")
+						# print(data_list[1] + " has logged in")
 						sock.send(data_list[1] + " has logged in")
 				#arg command
 				elif(isUserLoggedIn(sock)):
@@ -131,7 +138,7 @@ def userThread(sock):
 							elif(data_list[1].isdigit()):
 								get_groups(int(data_list[1]), sock)
 							else:
-								sock.send(help_menu)
+								sock.send(ag_menu)
 					#sg command
 					elif data_list[0] == "sg":
 						if len(data_list)<2:
@@ -146,7 +153,7 @@ def userThread(sock):
 							elif(data_list[1].isdigit()):
 								get_subscribeGroups(int(data_list[1]), sock, True)
 							else:
-								sock.send(help_menu)
+								sock.send(sg_menu)
 					elif data_list[0] == "rg":
 						if(len(data_list) == 2):
 							if(data_list[1] == "n"):
@@ -169,7 +176,7 @@ def userThread(sock):
 							if(data_list[1] == "r"):
 								if(len(data_list) != 3):
 									print("error")
-									sock.send(help_menu)
+									sock.send(rg_menu)
 								else:
 									print(data_list[2])
 									if(len(data_list[2]) == 1):
@@ -181,7 +188,7 @@ def userThread(sock):
 							elif(data_list[2].isdigit()):
 								send_resultRG(int(data_list[2]),data_list, sock)
 							else:
-								sock.send(help_menu)
+								sock.send(rg_menu)
 					elif data.strip() == "logout":
 						sock.send("Bye")
 						for i in user_list:
@@ -332,27 +339,33 @@ def getGroupPosts(group):
 # @para N number of groups to print or default value
 def subscribeGroups(data_list, sock):
 	if len(data_list)<3:
-		sock.send(help_menu)
+		sock.send(error_msg+" "+data_list[0])
+		sock.send(ag_menu)
 	else:
 		for x in range(2, len(data_list)):
 			user = getUserBySocket(sock)
 			subscribedGroup = user.groupList[int(data_list[x]) - 1]
 			accessSQL("INSERT INTO subscription VALUES (\'" + str(subscribedGroup.groupID)  + "\',\'" + user.username + "\')")
 	#reset counter
-	get_groups(DEFAULT, sock)
+		get_groups(DEFAULT, sock)
 	return True
 
 #For command AG or SG
 def unsubscribeGroups(data_list, sock):
 	if len(data_list)<3:
-		sock.send(help_menu)
+		if(data_list[0]=="ag"):
+			sock.send(error_msg+" "+data_list[0])
+			sock.send(ag_menu)
+		elif(data_list[0]=="sg"):
+			sock.send(error_msg+" "+data_list[0])
+			sock.send(sg_menu)
 	else:
 		for x in range(2, len(data_list)):
 			user = getUserBySocket(sock)
 			subscribedGroup = user.groupList[int(data_list[x]) - 1]		
 			query = "DELETE FROM subscription WHERE groupID = %d and userId = \'%s\'" % (subscribedGroup.groupID, user.username)
 			accessSQL(query)
-	get_groups(DEFAULT, sock)
+		get_groups(DEFAULT, sock)
 	return True
 
 def print_restGroups(sock, mode):
