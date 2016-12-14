@@ -69,7 +69,7 @@ def server():
 	#establish server socket
 	server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-	server_socket.bind((HOST, PORT))
+	server_socket.bind(("", PORT))
 	server_socket.listen(10)
 
 	LIST_SOCKETS.append(server_socket)
@@ -102,7 +102,7 @@ def userThread(sock):
 			data = sock.recv(BUFF)
 			if data:
 				#deal with data
-				print(str(data))
+		#		print(str(data))
 				data_list = data.strip().split()
 						
 				#help menu
@@ -154,6 +154,7 @@ def userThread(sock):
 								get_subscribeGroups(int(data_list[1]), sock, True)
 							else:
 								sock.send(sg_menu)
+					#rg command
 					elif data_list[0] == "rg":
 						if(len(data_list) == 2):
 							if(data_list[1] == "n"):
@@ -166,12 +167,13 @@ def userThread(sock):
 
 								readPost(int(strId), sock)
 							elif(getGroupByGroupName(data_list[1], getSubscribedGroupList(sock)) is not None):
-								print("GOT HERE")
+						#		print("GOT HERE")
 								send_resultRG(DEFAULT,data_list, sock)
 							else:
-								print("Not subscribed")
+						#		print("Not subscribed")
 								sock.send("Not subscribed")
-								print("FAIL")
+							#	print("FAIL")
+						#else
 						else:
 							if(data_list[1] == "r"):
 								if(len(data_list) != 3):
@@ -189,6 +191,7 @@ def userThread(sock):
 								send_resultRG(int(data_list[2]),data_list, sock)
 							else:
 								sock.send(rg_menu)
+					#logout
 					elif data.strip() == "logout":
 						sock.send("Bye")
 						for i in user_list:
@@ -199,12 +202,14 @@ def userThread(sock):
 						#remove socket
 						if sock in LIST_SOCKETS:
 							LIST_SOCKETS.remove(sock)
+				#send user not logged in to client
 				else:
 					sock.send("User is not logged in\n")
 					#sock.send(help_menu)
+		#ENSURE SERVER NOT CRASH
 		except Exception as e: 
 			#send out
-			print("DAVE YOU GENIUS")
+			#print("DAVE YOU GENIUS")
 			print str(e)
 			continue
 
@@ -220,12 +225,13 @@ def loginUser(username, socket):
 	#print("HERE")
 	return User(username, socket)
 
+#CHECK IF USER IS LOGGED IN
 def isUserLoggedIn(sock):
 	if(getUserBySocket(sock) is not None):
 		return True
 	else:
 		return False
-	
+#ACCESS SQL
 def accessSQL(statement):
 	conn = sqlite3.connect('./database/InterestDB.db')
 	conn.row_factory = sqlite3.Row
@@ -234,6 +240,7 @@ def accessSQL(statement):
 	dbreturned = connCursor.fetchall()
 	conn.commit()
 	return dbreturned
+
 
 def getUserBySocket(sock):
 	for u in user_list:
@@ -264,6 +271,7 @@ def getSubscribedGroupList(sock):
 		groupModel.isSubscribed = True
 	return groupList
 	
+
 def get_groups(N, sock):
 	#for loop	
 	groupsDB = accessSQL("SELECT * FROM groups")
@@ -365,7 +373,12 @@ def unsubscribeGroups(data_list, sock):
 			subscribedGroup = user.groupList[int(data_list[x]) - 1]		
 			query = "DELETE FROM subscription WHERE groupID = %d and userId = \'%s\'" % (subscribedGroup.groupID, user.username)
 			accessSQL(query)
-		get_groups(DEFAULT, sock)
+		if(data_list[0] == "ag"):
+			user = getUserBySocket(sock)
+			get_groups(user.numLineToRead, sock)
+		else:
+			user = getUserBySocket(sock)
+			get_subscribeGroups(user.numLineToRead, sock, True)
 	return True
 
 def print_restGroups(sock, mode):
@@ -374,33 +387,9 @@ def print_restGroups(sock, mode):
 	sendGroup(user, user.groupIndex, user.groupIndex + user.numLineToRead, sock, mode)
 	#reset counter
 	return True
-def print_post(sock):
-	final_str = "" 
-	final_str = final_str + "Group: " + "put" + "\n"
-	final_str = final_str + "Subject: " + "put" + "\n"
-	final_str = final_str + "Author: " + "put" + "\n"
-	final_str = final_str + "Date: " + "put" + "\n"
 
-	sock.send(final_str)
 
-#Prints for commands AG and SG
-def print_result_AG_SG(final_str, data_list, sock):
 
-	#print group counter 
-	print(counter + ". ")
-
-	if(MODE=="ag"):
-			#check if the current user is subscribed to this specific group
-		if():
-			print("(" + "put status here" + ")  ")
-		else:
-			print("( )")
-	elif(MODE=="sg"):
-			#print the number of unread/new posts or empty string
-		print("put number of unread/new post here" + "  ")
-			
-	#print the group name
-	print("put here")
 
 #Prints for command RG
 #Order them by unread/new posts first
@@ -408,10 +397,10 @@ def send_resultRG(N,data_list ,sock):
 	get_subscribeGroups(0, sock, False)
 	user = getUserBySocket(sock)
 	user.readingGroup = getGroupByGroupName(data_list[1], user.groupList)
-	print(user.readingGroup)
+	#print(user.readingGroup)
 	#TODO CHECK IF READING GROUP IS NONE
 	markReadPost(user.readingGroup, user)
-	print(user.readingGroup.posts)
+	#print(user.readingGroup.posts)
 	user.numLineToRead = N
 	sendGroupPostlist(user, user.postIndex, user.postIndex + N, sock)
 
